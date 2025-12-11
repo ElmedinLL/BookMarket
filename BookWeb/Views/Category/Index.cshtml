@@ -1,3 +1,41 @@
-﻿@model IEnumerable<BookWeb.Models.Category>
+﻿@model List<Category>
 
-<h1>Cateogry List</h1>
+    <div class="container border ">
+    <div class="row pt-3 pb-3">
+<div class="col-6">
+            <h2>Cateogry List</h2>
+
+        </div>
+<div class="col-6 text-end">
+        <a asp-controller="Category" asp-action="Create" 
+        class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i>
+        Create New Category
+        </a>
+</div>
+
+
+
+</div>
+<table class="table border border-2 border-light table-striped">
+    <thead>
+    <tr>
+        <th>Category Name</th>
+        <th>Display Order</th>
+    </tr>
+        </thead>
+        <tbody>
+        @foreach (var obj in Model)
+        {
+            <tr>
+        <td>
+           @obj.Name
+        </td>
+         <td>
+            @obj.DisplayOrder
+        </td>
+    </tr>
+        }
+        </tbody>
+</table>
+</div>
