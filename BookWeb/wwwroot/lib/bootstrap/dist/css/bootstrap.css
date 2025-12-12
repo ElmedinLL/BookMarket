@@ -2158,14 +2158,11 @@ progress {
 .table-sm > :not(caption) > * > * {
     padding: 0.25rem 0.25rem;
 }
-
-.table-bordered > :not(caption) > * {
-    border-width: var(--bs-border-width) 0;
+.table.table-bordered th,
+.table.table-bordered td {
+    border: 1px solid black !important;
 }
 
-    .table-bordered > :not(caption) > * > * {
-        border-width: 0 var(--bs-border-width);
-    }
 
 .table-borderless > :not(caption) > * > * {
     border-bottom-width: 0;
