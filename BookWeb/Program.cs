@@ -1,3 +1,5 @@
+using Book.DataAccess.Repository;
+using Book.DataAccess.Repository.IRepository;
 using BookMarket.DataAccess.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +12,7 @@ builder.Services.AddDbContext<ApplicationDBContext>
     (builder.Configuration.GetConnectionString
     ("DefaultConnection")));
     
-
+builder.Services.AddScoped<IUnitOfWork,UnitOfWork>();
 
 var app = builder.Build();
 
@@ -31,6 +33,6 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{area=Customer}/{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
