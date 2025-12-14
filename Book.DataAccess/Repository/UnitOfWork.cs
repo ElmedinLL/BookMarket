@@ -10,18 +10,20 @@ namespace Book.DataAccess.Repository
 {
     public class UnitOfWork : IUnitOfWork
     {
-
+        
 
         private ApplicationDBContext _db;
         public ICateogoryRepository Category
         { get; private set; }
+        public IProductRepository Product { get; private set; }
 
-      
+
 
         public UnitOfWork(ApplicationDBContext db)
         {
             _db = db;
             Category = new CategoryRepository(_db);
+            Product = new ProductRepository(_db);
         }
 
     

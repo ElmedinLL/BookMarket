@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Book.Models;
+using BookMarket.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,13 +8,10 @@ using System.Threading.Tasks;
 
 namespace Book.DataAccess.Repository.IRepository
 {
-    public interface IUnitOfWork
+    public interface IProductRepository :
+        IRepository<Product>
     {
-        ICateogoryRepository Category { get; }
-        IProductRepository Product{ get; }
-
-        void Save();  
-
+        void Update(Product obj);
 
     }
 }
