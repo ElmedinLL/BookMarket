@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Book.DataAccess.Migrations
 {
     [DbContext(typeof(ApplicationDBContext))]
-    [Migration("20251213160558_addProductTableAndSeedData")]
-    partial class addProductTableAndSeedData
+    [Migration("20251214095942_addImgURLtoProduct")]
+    partial class addImgURLtoProduct
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -36,11 +36,18 @@ namespace Book.DataAccess.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ISBN")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ImageUrl")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -62,6 +69,8 @@ namespace Book.DataAccess.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CategoryId");
+
                     b.ToTable("Products");
 
                     b.HasData(
@@ -69,8 +78,10 @@ namespace Book.DataAccess.Migrations
                         {
                             Id = 1,
                             Author = "Billy Spark",
+                            CategoryId = 1,
                             Description = "Praesent vitae sodales libero. Praesent molestie orci augue, vitae euismod velit sollicitudin ac. Praesent vestibulum facilisis nibh ut ultricies.\r\n\r\nNunc malesuada viverra ipsum sit amet tincidunt. ",
                             ISBN = "SWD9999001",
+                            ImageUrl = "",
                             ListPrice = 99.0,
                             Price = 90.0,
                             Price100 = 80.0,
@@ -81,8 +92,10 @@ namespace Book.DataAccess.Migrations
                         {
                             Id = 2,
                             Author = "Nancy Hoover",
+                            CategoryId = 1,
                             Description = "Praesent vitae sodales libero. Praesent molestie orci augue, vitae euismod velit sollicitudin ac. Praesent vestibulum facilisis nibh ut ultricies.\r\n\r\nNunc malesuada viverra ipsum sit amet tincidunt. ",
                             ISBN = "CAW777777701",
+                            ImageUrl = "",
                             ListPrice = 40.0,
                             Price = 30.0,
                             Price100 = 20.0,
@@ -93,8 +106,10 @@ namespace Book.DataAccess.Migrations
                         {
                             Id = 3,
                             Author = "Julian Button",
+                            CategoryId = 2,
                             Description = "Praesent vitae sodales libero. Praesent molestie orci augue, vitae euismod velit sollicitudin ac. Praesent vestibulum facilisis nibh ut ultricies.\r\n\r\nNunc malesuada viverra ipsum sit amet tincidunt. ",
                             ISBN = "RITO5555501",
+                            ImageUrl = "",
                             ListPrice = 55.0,
                             Price = 50.0,
                             Price100 = 35.0,
@@ -105,8 +120,10 @@ namespace Book.DataAccess.Migrations
                         {
                             Id = 4,
                             Author = "Abby Muscles",
+                            CategoryId = 2,
                             Description = "Praesent vitae sodales libero. Praesent molestie orci augue, vitae euismod velit sollicitudin ac. Praesent vestibulum facilisis nibh ut ultricies.\r\n\r\nNunc malesuada viverra ipsum sit amet tincidunt. ",
                             ISBN = "WS3333333301",
+                            ImageUrl = "",
                             ListPrice = 70.0,
                             Price = 65.0,
                             Price100 = 55.0,
@@ -117,8 +134,10 @@ namespace Book.DataAccess.Migrations
                         {
                             Id = 5,
                             Author = "Ron Parker",
+                            CategoryId = 3,
                             Description = "Praesent vitae sodales libero. Praesent molestie orci augue, vitae euismod velit sollicitudin ac. Praesent vestibulum facilisis nibh ut ultricies.\r\n\r\nNunc malesuada viverra ipsum sit amet tincidunt. ",
                             ISBN = "SOTJ1111111101",
+                            ImageUrl = "",
                             ListPrice = 30.0,
                             Price = 27.0,
                             Price100 = 20.0,
@@ -129,8 +148,10 @@ namespace Book.DataAccess.Migrations
                         {
                             Id = 6,
                             Author = "Laura Phantom",
+                            CategoryId = 3,
                             Description = "Praesent vitae sodales libero. Praesent molestie orci augue, vitae euismod velit sollicitudin ac. Praesent vestibulum facilisis nibh ut ultricies.\r\n\r\nNunc malesuada viverra ipsum sit amet tincidunt. ",
                             ISBN = "FOT000000001",
+                            ImageUrl = "",
                             ListPrice = 25.0,
                             Price = 23.0,
                             Price100 = 20.0,
@@ -178,6 +199,17 @@ namespace Book.DataAccess.Migrations
                             DisplayOrder = 3,
                             Name = "History"
                         });
+                });
+
+            modelBuilder.Entity("Book.Models.Product", b =>
+                {
+                    b.HasOne("BookMarket.Models.Category", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
                 });
 #pragma warning restore 612, 618
         }

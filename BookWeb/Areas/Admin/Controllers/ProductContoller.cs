@@ -2,7 +2,9 @@
 using Book.Models;
 using BookMarket.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Build.Evaluation;
+using System.Collections.Generic;
 
 namespace BookWeb.Areas.Admin.Controllers
 {
@@ -22,11 +24,26 @@ namespace BookWeb.Areas.Admin.Controllers
             List<Product> objProductList = 
                 _unitOfWork.Product.GetAll().ToList();
 
+
             return View(objProductList);
         }
 
         public IActionResult Create()
         {
+
+            IEnumerable<SelectListItem> CategoryList =
+            _unitOfWork.Category.GetAll().Select(u => new SelectListItem
+            {
+                Text = u.Name,
+                Value = u.Id.ToString()
+            });
+
+            //ViewBag
+            //ViewBag.CategoryList = CategoryList;
+
+            //ViewData
+            ViewData["CategoryList"] = CategoryList;
+
             return View();
         }
 
