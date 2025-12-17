@@ -1,5 +1,6 @@
 ﻿using Book.DataAccess.Repository.IRepository;
 using Book.Models;
+using Book.Models.ViewModels;
 using BookMarket.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -13,8 +14,12 @@ namespace BookWeb.Areas.Admin.Controllers
     public class ProductController : Controller
     {
         private readonly IUnitOfWork _unitOfWork;
-        public ProductController(IUnitOfWork unitOfWork)
+        private readonly IWebHostEnvironment webHostEnvironment;
+        public ProductController(IUnitOfWork unitOfWork,
+            IWebHostEnvironment webHostEnvironment)
+
         {
+           this.webHostEnvironment = webHostEnvironment;
             _unitOfWork = unitOfWork;
         }
 
@@ -28,76 +33,93 @@ namespace BookWeb.Areas.Admin.Controllers
             return View(objProductList);
         }
 
-        public IActionResult Create()
+        public IActionResult Upsert(int ? id) //Up-Update sert-Insert
         {
-
-            IEnumerable<SelectListItem> CategoryList =
-            _unitOfWork.Category.GetAll().Select(u => new SelectListItem
+            ProductVM productVM = new()
+            {
+             CategoryList = _unitOfWork.Category.GetAll().
+             Select(u => new SelectListItem
             {
                 Text = u.Name,
                 Value = u.Id.ToString()
-            });
+            }),
+                Product = new Product()
+            };
+            if (id == null || id == 0)
+            {
+                //create product
+                return View(productVM);
+            }
+            else
+            {
+                //update product
+                productVM.Product = _unitOfWork.Product.Get(u => u.Id == id);
+                return View(productVM);
+            }
+              
+       
 
-            //ViewBag
-            //ViewBag.CategoryList = CategoryList;
-
-            //ViewData
-            ViewData["CategoryList"] = CategoryList;
-
-            return View();
         }
 
         [HttpPost]
-
-        public IActionResult Create(Product obj)
+        public IActionResult Upsert(ProductVM productVM , IFormFile? file)
         {
-            if (obj.Title == obj.Description)
-            {
-                ModelState.AddModelError("Description", "The Description cannot match the name");
-            }
+          
 
             if (ModelState.IsValid)
             {
-                _unitOfWork.Product.Add(obj);
+                    string wwwRootPath = webHostEnvironment.WebRootPath;
+                if (file != null)
+                {
+                    string fileName = Guid.NewGuid().ToString() +Path.GetExtension(file.FileName);
+                    string productPath = Path.Combine(wwwRootPath, @"images\product");
+
+                    // check if we have a image - if not its a new image and we gonna skip the if and go to create
+                    if (!string.IsNullOrEmpty(productVM.Product.ImageUrl)) 
+                    {
+
+                       //delete the old image
+                        var oldImagePath = Path.Combine(wwwRootPath, productVM.Product.ImageUrl.TrimStart('\\'));
+                        if (System.IO.File.Exists(oldImagePath))
+                        {
+                            System.IO.File.Delete(oldImagePath);
+                        }
+                    }
+
+
+                    using (var fileStream = new FileStream(Path.Combine(productPath,fileName),FileMode.Create))
+                    {
+                        file.CopyTo(fileStream);   
+                    }
+
+                    productVM.Product.ImageUrl = @"\images\product\" + fileName;
+                }
+                if (productVM.Product.Id == null)
+                {
+                    _unitOfWork.Product.Add(productVM.Product);
+                }
+                else
+                {
+                    _unitOfWork.Product.Update(productVM.Product);
+                }
+
+                   
                 _unitOfWork.Save();
                 TempData["success"] = "Product created successfuly";
-                return RedirectToAction("Index" , "Product");
+                return RedirectToAction("Index", "Product");
             }
-            return View();
-        }
-
-        public IActionResult Edit(int ? id)
-        {
-            if (id is null || id <= 0)
+            else
             {
-                return NotFound();
+                productVM.CategoryList = _unitOfWork.Category.GetAll().
+              Select(u => new SelectListItem
+              {
+                  Text = u.Name,
+                  Value = u.Id.ToString()
+              });
+                return View(productVM);
+                
+                };
             }
-
-            var productFromDB =
-            _unitOfWork.Product.Get(u => u.Id == id);
-
-            if (productFromDB == null)
-            {
-                return NotFound();
-            }
-            return View(productFromDB);
-
-        }
-
-        [HttpPost]
-        
-        public IActionResult Edit(Product obj)
-        {
-            if (ModelState.IsValid)
-            {
-                _unitOfWork.Product.Update(obj);
-                _unitOfWork.Save();
-                TempData["success"] = "Product updated successfuly";
-                return RedirectToAction("Index");
-            }
-            return View();
-
-        }
 
         public IActionResult Delete(int ? id)
         {
