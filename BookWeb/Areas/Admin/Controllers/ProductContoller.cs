@@ -19,30 +19,30 @@ namespace BookWeb.Areas.Admin.Controllers
             IWebHostEnvironment webHostEnvironment)
 
         {
-           this.webHostEnvironment = webHostEnvironment;
+            this.webHostEnvironment = webHostEnvironment;
             _unitOfWork = unitOfWork;
         }
 
 
         public IActionResult Index()
         {
-            List<Product> objProductList = 
-                _unitOfWork.Product.GetAll().ToList();
+            List<Product> objProductList =
+                _unitOfWork.Product.GetAll(includeProperties: "Category").ToList();
 
 
             return View(objProductList);
         }
 
-        public IActionResult Upsert(int ? id) //Up-Update sert-Insert
+        public IActionResult Upsert(int? id) //Up-Update sert-Insert
         {
             ProductVM productVM = new()
             {
-             CategoryList = _unitOfWork.Category.GetAll().
+                CategoryList = _unitOfWork.Category.GetAll().
              Select(u => new SelectListItem
-            {
-                Text = u.Name,
-                Value = u.Id.ToString()
-            }),
+             {
+                 Text = u.Name,
+                 Value = u.Id.ToString()
+             }),
                 Product = new Product()
             };
             if (id == null || id == 0)
@@ -56,30 +56,31 @@ namespace BookWeb.Areas.Admin.Controllers
                 productVM.Product = _unitOfWork.Product.Get(u => u.Id == id);
                 return View(productVM);
             }
-              
-       
+
+
 
         }
 
         [HttpPost]
-        public IActionResult Upsert(ProductVM productVM , IFormFile? file)
+        public IActionResult Upsert(ProductVM productVM, IFormFile? file)
         {
-          
-
             if (ModelState.IsValid)
             {
-                    string wwwRootPath = webHostEnvironment.WebRootPath;
+                //getting the path to wwwroot
+                string wwwRootPath = webHostEnvironment.WebRootPath;
                 if (file != null)
                 {
-                    string fileName = Guid.NewGuid().ToString() +Path.GetExtension(file.FileName);
-                    string productPath = Path.Combine(wwwRootPath, @"images\product");
+                    // chaning the file name to a unique name
+                    string fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+                    string productPath = Path.Combine(wwwRootPath, @"images/product");
 
                     // check if we have a image - if not its a new image and we gonna skip the if and go to create
-                    if (!string.IsNullOrEmpty(productVM.Product.ImageUrl)) 
+                    if (!string.IsNullOrEmpty(productVM.Product.ImageUrl))
                     {
 
-                       //delete the old image
-                        var oldImagePath = Path.Combine(wwwRootPath, productVM.Product.ImageUrl.TrimStart('\\'));
+                        //delete the old image
+                        var oldImagePath = Path.Combine(wwwRootPath, productVM.Product.ImageUrl.TrimStart('/', '\\')
+ );
                         if (System.IO.File.Exists(oldImagePath))
                         {
                             System.IO.File.Delete(oldImagePath);
@@ -87,14 +88,14 @@ namespace BookWeb.Areas.Admin.Controllers
                     }
 
 
-                    using (var fileStream = new FileStream(Path.Combine(productPath,fileName),FileMode.Create))
+                    using (var fileStream = new FileStream(Path.Combine(productPath, fileName), FileMode.Create))
                     {
-                        file.CopyTo(fileStream);   
+                        file.CopyTo(fileStream);
                     }
 
-                    productVM.Product.ImageUrl = @"\images\product\" + fileName;
+                    productVM.Product.ImageUrl = @"/images/product/" + fileName;
                 }
-                if (productVM.Product.Id == null)
+                if (productVM.Product.Id == 0)
                 {
                     _unitOfWork.Product.Add(productVM.Product);
                 }
@@ -103,7 +104,7 @@ namespace BookWeb.Areas.Admin.Controllers
                     _unitOfWork.Product.Update(productVM.Product);
                 }
 
-                   
+
                 _unitOfWork.Save();
                 TempData["success"] = "Product created successfuly";
                 return RedirectToAction("Index", "Product");
@@ -117,58 +118,47 @@ namespace BookWeb.Areas.Admin.Controllers
                   Value = u.Id.ToString()
               });
                 return View(productVM);
-                
-                };
+
             }
-
-        public IActionResult Delete(int ? id)
-        {
-            if (id == null || id <= 0)
-            {
-                return NotFound();
-            }
-            var productFromDB =
-            _unitOfWork.Product.Get(u => u.Id == id);
-
-            if (productFromDB == null)
-            {
-                return NotFound(); 
-            }
-            return View(productFromDB);
-
-
+            ;
         }
 
-        [HttpPost,ActionName("Delete")]
-        public IActionResult DeletePOST(int ? id)
+       
+
+
+        #region API CALLS
+
+        [HttpGet]
+        public IActionResult GetAll()
         {
-            
-            if (id == null || id <= 0)
-            {
-                return NotFound();
-            }
-
-            var obj =
-            _unitOfWork.Product.Get(u => u.Id == id);
-            if (obj == null)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                _unitOfWork.Product.Remove(obj);
-                _unitOfWork.Save();
-                TempData["success"] = "Product deleted successfuly";
-                return RedirectToAction("index");
-
-            }
-            return View();
-
+            List<Product> objProductList =
+                _unitOfWork.Product.GetAll(includeProperties: "Category").ToList();
+            return Json(new { data = objProductList });
         }
 
 
+        [HttpDelete]
+        public IActionResult Delete(int? id)
+        {
+            var productToBeDeleted = _unitOfWork.Product.Get(u => u.Id == id);
+            if (productToBeDeleted == null)
+            {
+                return Json(new { success = false, message = "Error while deleting" });
+            }
+            //delete the image from wwwroot
+            var oldImagePath = Path.Combine(webHostEnvironment.WebRootPath,
+                productToBeDeleted.ImageUrl.TrimStart('/', '\\'));
+            if (System.IO.File.Exists(oldImagePath))
+            {
+                System.IO.File.Delete(oldImagePath);
+            }
 
+            _unitOfWork.Product.Remove(productToBeDeleted);
+            _unitOfWork.Save();
+            return Json(new { success = true, message = "Delete Successful" });
+        }
 
+        #endregion
     }
-}
+    }
+
