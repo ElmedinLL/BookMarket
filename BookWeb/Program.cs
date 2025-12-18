@@ -1,7 +1,10 @@
+using Azure;
 using Book.DataAccess.Repository;
 using Book.DataAccess.Repository.IRepository;
 using BookMarket.DataAccess.Data;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,7 +14,8 @@ builder.Services.AddDbContext<ApplicationDBContext>
     (options => options.UseSqlServer
     (builder.Configuration.GetConnectionString
     ("DefaultConnection")));
-    
+
+
 builder.Services.AddScoped<IUnitOfWork,UnitOfWork>();
 
 var app = builder.Build();
