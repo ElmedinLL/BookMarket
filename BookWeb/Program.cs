@@ -18,7 +18,7 @@ builder.Services.AddDbContext<ApplicationDBContext>
     (builder.Configuration.GetConnectionString
     ("DefaultConnection")));
 
-builder.Services.AddIdentity<IdentityUser,IdentityRole>().AddEntityFrameworkStores<ApplicationDBContext>();
+builder.Services.AddIdentity<IdentityUser,IdentityRole>().AddEntityFrameworkStores<ApplicationDBContext>().AddDefaultTokenProviders();
 builder.Services.AddScoped<IUnitOfWork,UnitOfWork>();
 builder.Services.AddScoped<IEmailSender, EmailSender>();
 
