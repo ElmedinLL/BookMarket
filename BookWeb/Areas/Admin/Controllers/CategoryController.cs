@@ -1,7 +1,9 @@
 ﻿using Book.DataAccess.Repository;
 using Book.DataAccess.Repository.IRepository;
+using Book.Utility;
 using BookMarket.DataAccess.Data;
 using BookMarket.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 
@@ -9,6 +11,7 @@ namespace BookWeb.Areas.Admin.Controllers
 {
 
     [Area("Admin")]
+    [Authorize(Roles = SD.Role_Admin)]
     public class CategoryController : Controller
     {
 
