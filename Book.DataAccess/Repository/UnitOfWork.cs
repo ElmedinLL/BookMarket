@@ -16,7 +16,8 @@ namespace Book.DataAccess.Repository
         public ICateogoryRepository Category
         { get; private set; }
         public IProductRepository Product { get; private set; }
-
+        public IShoppingCartRepository ShoppingCart
+        { get; private set; }
         public ICompanyRepository Company
         { get; private set; }
 
@@ -27,6 +28,7 @@ namespace Book.DataAccess.Repository
             Category = new CategoryRepository(_db);
             Product = new ProductRepository(_db);
             Company = new CompanyRepository(_db);
+            ShoppingCart = new ShoppingCartRepository(_db);
         }
 
     
