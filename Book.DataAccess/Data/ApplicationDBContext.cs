@@ -20,6 +20,7 @@ namespace BookMarket.DataAccess.Data
         public DbSet<Product> Products { get; set; }
         public DbSet<ApplicationUser> ApplicationUsers { get; set; }
 
+        public DbSet<Company> Companies{ get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -119,6 +120,38 @@ namespace BookMarket.DataAccess.Data
                     ImageUrl = ""
                     
                 });
+
+            modelBuilder.Entity<Company>().HasData(
+              new Company { 
+              Id = 1,
+                Name = "Tech Solutions",
+                StreetAddress = "123 Tech Lane",
+                City = "Techville",
+                State = "TS",
+                PostalCode = "12345",
+                PhoneNumber = "123-456-7890"
+              },
+               new Company
+               {
+                   Id = 2,
+                   Name = "Link One",
+                   StreetAddress = "111 Smooth ",
+                   City = "El Paso",
+                   State = "TX",
+                   PostalCode = "23345",
+                   PhoneNumber = "444-555-7890"
+               },
+                new Company
+                {
+                    Id = 3,
+                    Name = "Coders",
+                    StreetAddress = "Green Park",
+                    City = "Chicago",
+                    State = "IL",
+                    PostalCode = "55555",
+                    PhoneNumber = "222-231-6546"
+                }
+                );
 
         }
     }
