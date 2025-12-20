@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
+using Book.DataAccess.Repository.IRepository;
 using Book.Models;
 using Book.Utility;
 using Microsoft.AspNetCore.Authentication;
@@ -34,8 +35,9 @@ namespace BookWeb.Areas.Identity.Pages.Account
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
         private readonly RoleManager<IdentityRole> _roleManager;
-
+        private readonly IUnitOfWork _unitOfWork;
         public RegisterModel(
+            IUnitOfWork unitOfWork,
             UserManager<IdentityUser> userManager,
             RoleManager<IdentityRole> roleManager,
             IUserStore<IdentityUser> userStore,
@@ -43,6 +45,7 @@ namespace BookWeb.Areas.Identity.Pages.Account
             ILogger<RegisterModel> logger,
             IEmailSender emailSender)
         {
+            _unitOfWork = unitOfWork;
             _userManager = userManager;
             _userStore = userStore;
             _emailStore = GetEmailStore();
@@ -115,6 +118,10 @@ namespace BookWeb.Areas.Identity.Pages.Account
             public string? State { get; set; }
             public string? PostalCode { get; set; }
             public string? PhoneNumber { get; set; }
+            public int? CompanyId { get; set; }
+
+            [ValidateNever]
+            public IEnumerable<SelectListItem> CompanyList { get; set; }
 
         }
 
@@ -137,6 +144,11 @@ namespace BookWeb.Areas.Identity.Pages.Account
                 {
                     Text = n,
                     Value = n
+                }),
+                CompanyList = _unitOfWork.Company.GetAll().Select(n => new SelectListItem
+                {
+                    Text = n.Name,
+                    Value = n.Id.ToString()
                 })
             };
 
