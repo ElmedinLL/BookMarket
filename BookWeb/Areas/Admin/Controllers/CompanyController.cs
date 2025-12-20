@@ -13,7 +13,7 @@ namespace BookWeb.Areas.Admin.Controllers
 {
 
     [Area("Admin")]
-    [Authorize(Roles = (SD.Role_Admin))]
+   // [Authorize(Roles = (SD.Role_Admin))]
     public class CompanyController : Controller
     {
         private readonly IUnitOfWork _unitOfWork;
@@ -36,20 +36,30 @@ namespace BookWeb.Areas.Admin.Controllers
 
         public IActionResult Upsert(int? id) //Up-Update sert-Insert
         {
-           
+
             if (id == null || id == 0)
             {
                 //create Company
                 return View(new Company());
             }
+
             else
-            {
-                //update Company
+            {    //update Company
                 Company companyObj = _unitOfWork.Company.Get(u => u.Id == id);
+
+               
+                if (companyObj == null)
+                {
+                    // Kthe në faqen kryesore ose trego error
+                    return NotFound(); // Kthen 404
+                                       // OSE: return RedirectToAction("Index");
+                                       // OSE: return View("Error");
+                }
+                // No company found with this ID
                 return View(companyObj);
             }
 
-
+            
 
         }
 

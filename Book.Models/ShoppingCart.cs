@@ -11,7 +11,8 @@ namespace Book.Models
 {
     public class ShoppingCart
     {
-
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
         public int productId { get; set; }
         [ForeignKey("productId")]
@@ -19,7 +20,7 @@ namespace Book.Models
         public Product Product { get; set; }
         [Range(1, 1000,ErrorMessage ="Please enter a value between 1 and 1000")]
         public int Count { get; set; }
-        public string ApplicationUserId { get; set; }
+        public string? ApplicationUserId { get; set; }
         [ForeignKey("ApplicationUserId")]
         [ValidateNever]
         public ApplicationUser ApplicationUser { get; set; }

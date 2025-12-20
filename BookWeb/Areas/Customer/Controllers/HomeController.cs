@@ -2,8 +2,10 @@ using Book.DataAccess.Repository;
 using Book.DataAccess.Repository.IRepository;
 using Book.Models;
 using BookMarket.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using System.Security.Claims;
 
 namespace BookWeb.Areas.Customer.Controllers
 {
@@ -25,11 +27,40 @@ namespace BookWeb.Areas.Customer.Controllers
             return View(objProductList);
         }
 
-        public IActionResult Details(int? id)
+        public IActionResult Details(int id)
         {
+            
+            ShoppingCart cart = new()
+            {
+                Product = _unitOfWork.Product.Get(u => u.Id == id, includeProperties: "Category"),
+               Count = 1,
+               productId = id
+            };
+                return View(cart);
+        }
 
-            var product = _unitOfWork.Product.Get(u => u.Id == id, includeProperties: "Category");
-                return View(product);
+        [HttpPost]
+        [Authorize]
+        public IActionResult Details(ShoppingCart shoppingCart)
+        {
+            if (User.Identity is not ClaimsIdentity claimsIdentity)
+            {
+                return Unauthorized();
+            }
+
+            var userIdClaim = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim is null)
+            {
+                return Unauthorized();
+            }
+
+            shoppingCart.ApplicationUserId = userIdClaim.Value;
+            shoppingCart.Id = 0;
+
+            _unitOfWork.ShoppingCart.Add(shoppingCart);
+            _unitOfWork.Save();
+     
+           return RedirectToAction(nameof(Index));
         }
 
 
