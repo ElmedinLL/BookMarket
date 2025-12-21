@@ -56,8 +56,20 @@ namespace BookWeb.Areas.Customer.Controllers
 
             shoppingCart.ApplicationUserId = userIdClaim.Value;
             shoppingCart.Id = 0;
+           
+            ShoppingCart cartFromDb = _unitOfWork.ShoppingCart.
+                Get(u => u.ApplicationUserId == userIdClaim.Value && u.productId == shoppingCart.productId);
 
-            _unitOfWork.ShoppingCart.Add(shoppingCart);
+            if (cartFromDb != null)
+            {
+                cartFromDb.Count += shoppingCart.Count;
+                _unitOfWork.ShoppingCart.Update(cartFromDb);
+            }
+            else
+            {
+                _unitOfWork.ShoppingCart.Add(shoppingCart);
+            }
+
             _unitOfWork.Save();
      
            return RedirectToAction(nameof(Index));
