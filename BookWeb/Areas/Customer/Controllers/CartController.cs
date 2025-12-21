@@ -1,4 +1,5 @@
 ﻿using Book.DataAccess.Repository.IRepository;
+using Book.Models;
 using Book.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -32,7 +33,30 @@ namespace BookWeb.Areas.Customer.Controllers
            
             };
 
+            foreach (var cart in ShoppingCartVM.ShoppingCartList)
+            {
+                cart.Price = GetPriceBasedOnQuantity(cart);
+                ShoppingCartVM.OrderTotal += (cart.Price * cart.Count);
+            }
+
             return View(ShoppingCartVM);
+        }
+
+        private double GetPriceBasedOnQuantity(ShoppingCart shoppingcart)
+        {
+            if (shoppingcart.Count <= 50)
+            {
+                return shoppingcart.Product.Price;
+            }
+            if (shoppingcart.Count > 50 && shoppingcart.Count <= 100)
+            {
+                return shoppingcart.Product.Price50;
+            }
+            else
+            {
+                return shoppingcart.Product.Price100;
+            }
+           
         }
     }
 }
