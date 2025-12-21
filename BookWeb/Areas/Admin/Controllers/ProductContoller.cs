@@ -101,15 +101,17 @@ namespace BookWeb.Areas.Admin.Controllers
                 if (productVM.Product.Id == 0)
                 {
                     _unitOfWork.Product.Add(productVM.Product);
+                TempData["success"] = "Product created successfuly";
                 }
                 else
                 {
                     _unitOfWork.Product.Update(productVM.Product);
+                    TempData["success"] = "Product updated successfuly";
+                    _unitOfWork.Save();
                 }
 
 
                 _unitOfWork.Save();
-                TempData["success"] = "Product created successfuly";
                 return RedirectToAction("Index", "Product");
             }
             else
