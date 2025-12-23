@@ -18,7 +18,7 @@ namespace Book.DataAccess.Repository
         }
       public void Update(OrderHeader orderHeader)
         {
-            _db.OrderHeaders.Update(orderHeader;
+            _db.OrderHeaders.Update(orderHeader);
         }
     }
 }
