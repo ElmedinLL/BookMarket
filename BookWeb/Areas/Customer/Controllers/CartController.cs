@@ -4,6 +4,7 @@ using Book.Models.ViewModels;
 using Book.Utility;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using System.Security.Claims;
 
 namespace BookWeb.Areas.Customer.Controllers
@@ -88,7 +89,7 @@ namespace BookWeb.Areas.Customer.Controllers
             ShoppingCartVM.OrderHeader.ApplicationUserId = userId;
 
 
-            ShoppingCartVM.OrderHeader.ApplicationUser = _unitOfWork.ApplicationUser.Get(u => u.Id == userId);
+            ApplicationUser applicationUser = _unitOfWork.ApplicationUser.Get(u => u.Id == userId);
 
 
 
@@ -101,12 +102,14 @@ namespace BookWeb.Areas.Customer.Controllers
             //Whice means you will have 30days deadline to pay 
             //Customer / individual users need to pay right away
 
-            if (ShoppingCartVM.OrderHeader.ApplicationUser.CompanyId.GetValueOrDefault() == 0)
+            // Treat as company account if user is in company role OR has a non-null, positive CompanyId
+
+            if (applicationUser.CompanyId.GetValueOrDefault() == 0 )
             {
                 // Its a regular customer 
                 ShoppingCartVM.OrderHeader.PaymentStatus = SD.PaymentStatusPending;
                 ShoppingCartVM.OrderHeader.OrderStatus = SD.StatusPending;
-             
+
             }
             else
             {
@@ -133,15 +136,23 @@ namespace BookWeb.Areas.Customer.Controllers
                 _unitOfWork.Save();
             }
 
-            if (ShoppingCartVM.OrderHeader.ApplicationUser.CompanyId.GetValueOrDefault() == 0)
+            if (applicationUser.CompanyId.GetValueOrDefault() == 0)
             {
                 // Its a regular customer 
                 // We need to get payment , with strip logic
-                
+
 
             }
-            return View(ShoppingCartVM);
+            return RedirectToAction(nameof(OrderConfirmation) ,new { id = ShoppingCartVM.OrderHeader.Id});
         }
+           
+
+        public IActionResult OrderConfirmation(int? id)
+        {
+            return View(id);
+        }
+
+
         public IActionResult Plus(int cartId)
         {
             var cartFromDB = _unitOfWork.ShoppingCart.Get(u => u.Id == cartId);

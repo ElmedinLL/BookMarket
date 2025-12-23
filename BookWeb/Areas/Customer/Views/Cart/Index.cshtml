@@ -30,19 +30,20 @@
                                 <img src="@item.Product.ImageUrl" class="rounded" width="100%" />
                             </div>
                             <div class="col-12 col-lg-6 pt-md-3">
-                                <h5 class="text-uppercase text-secondary"><strong>Title</strong></h5>
+                                <h5 class="text-uppercase text-secondary"><strong>@item.Product.Title</strong></h5>
                               @Html.Raw(item.Product.Description)
                             </div>
                             <div class="col-12  col-lg-5 text-center row">
-                                <div class="col-3 text-md-right pt-2 pt-md-4">
+                                <div class="col-4 text-md-right pt-2 pt-md-4">
                                     <h6 class="fw-semibold">
-                                        @item.Price.ToString("c")
-                                        <span class="text-muted">&nbsp;x&nbsp;</span>@item.Count
+                                        @item.Product.Price.ToString("c")
+                                        <span class="text-muted"></span>
+                                        <div>@item.Product.Price x @item.Count </div>
                                     </h6>
                                 </div>
-                                <div class="col-6 col-sm-4 col-lg-6 pt-2">
+                                <div class="col-4 col-sm-4 col-lg-6 pt-2">
                                     <div class="w-75 btn-group" role="group">
-                                        <a asp-action="plus" asp-route-cartId="@item.Id" class="btn btn-outline-primary bg-gradient py-2">
+                                        <a asp-action="plus" asp-route-cartId="@item.Id" class="btn btn-outline-primary bg-gradient py-2 mx">
                                             <i class="bi bi-plus-square"></i>
                                         </a> &nbsp;
                                         <a asp-action="minus" asp-route-cartId="@item.Id" class="btn btn-outline-primary bg-gradient py-2">
@@ -51,7 +52,7 @@
                                     </div>
 
                                 </div>
-                                <div class="col-3 col-sm-4 col-lg-2 offset-lg-1 text-right pt-2">
+                                <div class="col-4 col-sm-4 col-lg-2 offset-lg-1 text-right pt-2">
                                     <a asp-action="remove" asp-route-cartId="@item.Id" class="btn btn-danger bg-gradient py-2 ">
                                         <i class="bi bi-trash-fill"></i>
                                     </a>
