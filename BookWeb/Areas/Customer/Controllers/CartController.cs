@@ -108,19 +108,19 @@ namespace BookWeb.Areas.Customer.Controllers
             //Customer / individual users need to pay right away
 
             // Treat as company account if user is in company role OR has a non-null, positive CompanyId
+            bool isCompanyAccount = User.IsInRole(SD.Role_Company) || (applicationUser.CompanyId.HasValue && applicationUser.CompanyId.Value > 0);
 
-            if (applicationUser.CompanyId.GetValueOrDefault() == 0 )
+            if (isCompanyAccount)
+            {
+                // its a company account
+                ShoppingCartVM.OrderHeader.PaymentStatus = SD.PaymentStatusDelayedPayment;
+                ShoppingCartVM.OrderHeader.OrderStatus = SD.StatusApproved;
+            }
+            else
             {
                 // Its a regular customer 
                 ShoppingCartVM.OrderHeader.PaymentStatus = SD.PaymentStatusPending;
                 ShoppingCartVM.OrderHeader.OrderStatus = SD.StatusPending;
-
-            }
-            else
-            {
-                //its a company account
-                ShoppingCartVM.OrderHeader.PaymentStatus = SD.PaymentStatusDelayedPayment;
-                ShoppingCartVM.OrderHeader.OrderStatus = SD.StatusApproved;
             }
 
             _unitOfWork.OrderHeader.Add(ShoppingCartVM.OrderHeader);
@@ -138,10 +138,12 @@ namespace BookWeb.Areas.Customer.Controllers
                 };
 
                 _unitOfWork.OrderDetail.Add(orderDetail);
-                _unitOfWork.Save();
             }
 
-            if (applicationUser.CompanyId.GetValueOrDefault() == 0)
+            // save all order details at once
+            _unitOfWork.Save();
+
+            if (!isCompanyAccount)
             {
                 // Its a regular customer
                 // We need to get payment , with strip logic
@@ -191,6 +193,30 @@ namespace BookWeb.Areas.Customer.Controllers
 
         public IActionResult OrderConfirmation(int? id)
         {
+
+            OrderHeader orderHeader = _unitOfWork.OrderHeader.Get(u => u.Id == id, includeProperties: "ApplicationUser");
+            if (orderHeader.PaymentStatus != SD.PaymentStatusDelayedPayment)
+            {
+                //order by a regular customer
+
+                var service = new SessionService();
+                Session session = service.Get(orderHeader.SessionId);
+
+                if (session.PaymentStatus.ToLower() =="paid" )
+                {
+                    _unitOfWork.OrderHeader.UpdateStripePaymentId(orderHeader.Id, session.Id, session.PaymentIntentId);
+                    _unitOfWork.OrderHeader.UpdateStatus(orderHeader.Id, SD.StatusApproved,SD.PaymentStatusApproved);
+                    _unitOfWork.Save();
+
+                }
+
+            }
+            List<ShoppingCart> shoppingCarts = _unitOfWork.ShoppingCart.GetAll(u => u.ApplicationUserId == orderHeader.ApplicationUserId).ToList();
+
+            _unitOfWork.ShoppingCart.RemoveRange(shoppingCarts);
+            _unitOfWork.Save();
+
+
             return View(id);
         }
 
