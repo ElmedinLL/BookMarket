@@ -1,0 +1,30 @@
+﻿var dataTable;
+
+$(document).ready(function () {
+    loadDataTable();
+});
+
+
+function loadDataTable() {
+    dataTable = $('#tblData').DataTable({
+        "ajax": { url: '/admin/order/getall' },
+ 
+        "columns": [
+        { data: 'id', "width":"10%" },
+            { data: 'name', "width": "20%" },
+            { data: 'phoneNumber', "width": "20%" },
+            { data: 'applicationUser.email', "width": "15%" },
+            { data: 'orderStatus', "width": "15%" },
+            { data: 'orderTotal', "width": "10%" },
+            {
+                data: 'id',
+                "render": function (data) {
+                    return `<div class="w-100 btn-group" role="group">
+                    <a href="/Admin/order/details?orderId=${data}" class="btn btn-primary mx-2">
+                    <i class="bi bi-pencil-square"></i></a>`
+                },
+                "width": "25%"
+            }
+        ]
+        });
+}

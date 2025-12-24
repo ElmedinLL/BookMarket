@@ -1,9 +1,11 @@
-﻿using Book.Models;
+﻿using Book.DataAccess.Repository.IRepository;
+using Book.Models;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BookWeb.Areas.Admin.Controllers
 {
+    [Area("Admin")]
     public class OrderController : Controller
     {
 
