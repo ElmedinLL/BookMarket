@@ -1,6 +1,7 @@
 ﻿@model OrderVM
 
 <form method="post">
+    <input asp-for="OrderHeader.Id" hidden>
     <br />
     <div class="container">
         <div class="card">
@@ -193,9 +194,11 @@
                                 </div>
                             </div>
 
-                            <!-- Added name attribute for submit button to identify which action was clicked -->
-                            <input type="submit" name="action" value="UpdateOrderDetails" class="btn btn-warning form-control my-1" />
-
+                            @if (User.IsInRole(SD.Role_Admin) || User.IsInRole(SD.Role_Employee)){
+                            <button type="submit" name="action" asp-action="UpdateOrderDetail" class="btn btn-warning form-control my-1">
+                                    Update Order Details"
+                                </button>
+                           }
                         </div>
                         <div class="col-12 col-lg-5 offset-lg-1">
                             <h4 class="d-flex justify-content-between align-items-center mb-3">
@@ -232,7 +235,7 @@
                                 </li>
                             </ul>
 
-                            <!-- Added name attribute for all submit buttons to identify which action was clicked -->
+                       
                             @if (Model.OrderHeader.PaymentStatus == SD.PaymentStatusDelayedPayment &&
                                                         Model.OrderHeader.OrderStatus == SD.StatusShipped)
                             {

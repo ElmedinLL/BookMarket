@@ -2,9 +2,11 @@
 using Book.Models;
 using Book.Models.ViewModels;
 using Book.Utility;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using System.Security.Claims;
 
 namespace BookWeb.Areas.Admin.Controllers
 {
@@ -13,6 +15,7 @@ namespace BookWeb.Areas.Admin.Controllers
     {
 
         private readonly IUnitOfWork _unitOfWork;
+        public OrderVM orderVM { get; set; }
 
         public OrderController(IUnitOfWork unitOfWork)
         {
@@ -25,13 +28,44 @@ namespace BookWeb.Areas.Admin.Controllers
 
         public IActionResult Details(int? orderId)
         {
-            OrderVM orderVM = new()
+             orderVM = new()
             {
                 OrderHeader = _unitOfWork.OrderHeader.Get(u => u.Id == orderId, includeProperties: "ApplicationUser"),
                 OrderDetail = _unitOfWork.OrderDetail.GetAll(u => u.OrderHeaderId == orderId, includeProperties: "Product")
             };
             return View(orderVM);
 
+        }
+
+        [HttpPost]
+        [Authorize(Roles = SD.Role_Admin +","+SD.Role_Employee)]
+        public IActionResult UpdateOrderDetail(OrderVM orderVM)
+        {
+            var orderHeaderFromDb = _unitOfWork.OrderHeader.Get(u => u.Id == orderVM.OrderHeader.Id);
+            if (orderHeaderFromDb == null)
+            {
+                return NotFound();
+            }
+
+            orderHeaderFromDb.Name = orderVM.OrderHeader.Name;
+            orderHeaderFromDb.PhoneNumber = orderVM.OrderHeader.PhoneNumber;
+            orderHeaderFromDb.StreetAddress = orderVM.OrderHeader.StreetAddress;
+            orderHeaderFromDb.City = orderVM.OrderHeader.City;
+            orderHeaderFromDb.State = orderVM.OrderHeader.State;
+            orderHeaderFromDb.PostalCode = orderVM.OrderHeader.PostalCode;
+            if (!string.IsNullOrEmpty(orderVM.OrderHeader.Carrier))
+            {
+                orderHeaderFromDb.Carrier = orderVM.OrderHeader.Carrier;
+            }
+            if (!string.IsNullOrEmpty(orderVM.OrderHeader.TrackingNumber))
+            {
+                orderHeaderFromDb.TrackingNumber = orderVM.OrderHeader.TrackingNumber;
+            }
+
+            _unitOfWork.OrderHeader.Update(orderHeaderFromDb);
+            _unitOfWork.Save();
+            TempData["success"] = "Order Details Updated Successfully.";
+            return RedirectToAction(nameof(Details), new { orderId = orderHeaderFromDb.Id });
         }
 
 
@@ -51,39 +85,52 @@ namespace BookWeb.Areas.Admin.Controllers
         [HttpGet]
         public IActionResult GetAll(string status)
         {
-            IEnumerable<OrderHeader> objOrderHeaders =
-                _unitOfWork.OrderHeader.GetAll(includeProperties: "ApplicationUser").ToList();
+            IEnumerable<OrderHeader> objOrderHeaders;
 
-
-            switch (status)
+            if (User.IsInRole(SD.Role_Admin) || User.IsInRole(SD.Role_Employee))
             {
-                case "pending":
-                    {
-                      objOrderHeaders = objOrderHeaders.Where(u => u.PaymentStatus == SD.PaymentStatusDelayedPayment);
-                        break;
-                    }
-                case "inprocess":
-                    {
-                       objOrderHeaders = objOrderHeaders.Where(u => u.OrderStatus == SD.StatusInProcess);
-                        break;
-                    }
-                case "completed":
-                    {
-                     objOrderHeaders = objOrderHeaders.Where(u => u.OrderStatus == SD.StatusShipped);
-                        break;
-                    }
-                case "approved":
-                    {
-                        objOrderHeaders = objOrderHeaders.Where(u => u.OrderStatus == SD.StatusApproved);
-                        break;
-                    }
-                default:
-                    {
-                        
-                        break;
-                    }
-                 
+                objOrderHeaders = _unitOfWork.OrderHeader.GetAll(includeProperties: "ApplicationUser").ToList();
             }
+            else
+            {
+                var claimsIdentity = (ClaimsIdentity)User.Identity;
+                var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
+                objOrderHeaders = _unitOfWork.OrderHeader.GetAll(u => u.ApplicationUserId == userId, includeProperties: "ApplicationUser").ToList();
+            }
+
+
+
+
+
+                switch (status)
+                {
+                    case "pending":
+                        {
+                            objOrderHeaders = objOrderHeaders.Where(u => u.PaymentStatus == SD.PaymentStatusDelayedPayment);
+                            break;
+                        }
+                    case "inprocess":
+                        {
+                            objOrderHeaders = objOrderHeaders.Where(u => u.OrderStatus == SD.StatusInProcess);
+                            break;
+                        }
+                    case "completed":
+                        {
+                            objOrderHeaders = objOrderHeaders.Where(u => u.OrderStatus == SD.StatusShipped);
+                            break;
+                        }
+                    case "approved":
+                        {
+                            objOrderHeaders = objOrderHeaders.Where(u => u.OrderStatus == SD.StatusApproved);
+                            break;
+                        }
+                    default:
+                        {
+
+                            break;
+                        }
+
+                }
             return Json(new { data = objOrderHeaders });
 
         }
