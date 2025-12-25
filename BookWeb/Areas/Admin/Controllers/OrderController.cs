@@ -1,5 +1,6 @@
 ﻿using Book.DataAccess.Repository.IRepository;
 using Book.Models;
+using Book.Models.ViewModels;
 using Book.Utility;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -22,6 +23,16 @@ namespace BookWeb.Areas.Admin.Controllers
             return View();
         }
 
+        public IActionResult Details(int? orderId)
+        {
+            OrderVM orderVM = new()
+            {
+                OrderHeader = _unitOfWork.OrderHeader.Get(u => u.Id == orderId, includeProperties: "ApplicationUser"),
+                OrderDetail = _unitOfWork.OrderDetail.GetAll(u => u.OrderHeaderId == orderId, includeProperties: "ProductDeatils")
+            };
+            return View(orderVM);
+
+        }
 
 
 
