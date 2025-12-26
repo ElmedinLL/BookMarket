@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.EntityFrameworkCore.SqlServer.Query.Internal;
+using Stripe;
 using System.Diagnostics;
 using System.Security.Claims;
 
@@ -149,7 +151,54 @@ namespace BookWeb.Areas.Admin.Controllers
             return RedirectToAction(nameof(Details), new { orderId = id });
         }
 
+        [HttpPost]
+        [Authorize(Roles = SD.Role_Admin + "," + SD.Role_Employee)]
+        public IActionResult CancelOrder(OrderVM orderVM)
+        {
+            if (orderVM == null || orderVM.OrderHeader == null)
+            {
+                return BadRequest();
+            }
 
+            var id = orderVM.OrderHeader.Id;
+            if (id == 0)
+            {
+                return BadRequest();
+            }
+
+            var orderHeader = _unitOfWork.OrderHeader.Get(u => u.Id == id);
+            if (orderHeader == null)
+            {
+                return NotFound();
+            }
+
+            // If payment was already approved (charged), attempt refund
+            if (orderHeader.PaymentStatus == SD.PaymentStatusApproved && !string.IsNullOrEmpty(orderHeader.PaymentIntentId))
+            {
+                var options = new RefundCreateOptions
+                {
+                    PaymentIntent = orderHeader.PaymentIntentId,
+                    Reason = RefundReasons.RequestedByCustomer
+                };
+
+                var service = new RefundService();
+                var refund = service.Create(options);
+
+                orderHeader.OrderStatus = SD.StatusRefunded;
+                orderHeader.PaymentStatus = SD.PaymentStatusRejected; // mark payment as handled
+            }
+            else
+            {
+                orderHeader.OrderStatus = SD.StatusCancelled;
+                orderHeader.PaymentStatus = SD.PaymentStatusRejected;
+            }
+
+            _unitOfWork.OrderHeader.Update(orderHeader);
+            _unitOfWork.Save();
+
+            TempData["success"] = "Order cancelled successfully.";
+            return RedirectToAction(nameof(Details), new { orderId = id });
+        }
 
 
 
