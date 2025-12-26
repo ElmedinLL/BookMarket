@@ -1,6 +1,7 @@
 using Book.DataAccess.Repository;
 using Book.DataAccess.Repository.IRepository;
 using Book.Models;
+using Book.Utility;
 using BookMarket.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -54,28 +55,34 @@ namespace BookWeb.Areas.Customer.Controllers
                 return Unauthorized();
             }
 
-            shoppingCart.ApplicationUserId = userIdClaim.Value;
+            var userId = userIdClaim.Value;
+            shoppingCart.ApplicationUserId = userId;
             shoppingCart.Id = 0;
-           
-            ShoppingCart cartFromDb = _unitOfWork.ShoppingCart.
-                Get(u => u.ApplicationUserId == userIdClaim.Value && u.productId == shoppingCart.productId);
+
+            ShoppingCart cartFromDb = _unitOfWork.ShoppingCart
+                .Get(u => u.ApplicationUserId == userId && u.productId == shoppingCart.productId);
 
             if (cartFromDb != null)
             {
                 cartFromDb.Count += shoppingCart.Count;
                 _unitOfWork.ShoppingCart.Update(cartFromDb);
+                _unitOfWork.Save();
             }
             else
             {
                 _unitOfWork.ShoppingCart.Add(shoppingCart);
+                _unitOfWork.Save();
             }
+
+            var totalQuantity = _unitOfWork.ShoppingCart
+                .GetAll(u => u.ApplicationUserId == userId)
+                .Sum(c => c.Count);
+
+            HttpContext.Session.SetInt32(SD.SessionCart, totalQuantity);
+
             TempData["success"] = "Cart updated successfully";
-
-            _unitOfWork.Save();
-     
-           return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index));
         }
-
 
         public IActionResult Privacy()
         {
