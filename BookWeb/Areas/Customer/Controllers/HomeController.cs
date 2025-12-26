@@ -24,6 +24,19 @@ namespace BookWeb.Areas.Customer.Controllers
 
         public IActionResult Index()
         {
+            var claimsIdentity = (ClaimsIdentity)User.Identity;
+            var claim = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (claim != null)
+            {
+                var totalQuantity = _unitOfWork.ShoppingCart
+                .GetAll(u => u.ApplicationUserId == claim.Value)
+                .Sum(c => c.Count);
+
+                HttpContext.Session.SetInt32(SD.SessionCart, totalQuantity);
+
+
+            }
             IEnumerable<Product> objProductList = _unitOfWork.Product.GetAll(includeProperties: "Category");
             return View(objProductList);
         }
