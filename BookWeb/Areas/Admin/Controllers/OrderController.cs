@@ -33,6 +33,17 @@ namespace BookWeb.Areas.Admin.Controllers
                 OrderHeader = _unitOfWork.OrderHeader.Get(u => u.Id == orderId, includeProperties: "ApplicationUser"),
                 OrderDetail = _unitOfWork.OrderDetail.GetAll(u => u.OrderHeaderId == orderId, includeProperties: "Product")
             };
+            if (orderVM.OrderHeader == null)
+            {
+                return NotFound();
+            }
+
+            // ensure OrderDetail is at least an empty list to prevent view null refs
+            if (orderVM.OrderDetail == null)
+            {
+                orderVM.OrderDetail = new List<OrderDetail>();
+            }
+
             return View(orderVM);
 
         }
@@ -41,6 +52,11 @@ namespace BookWeb.Areas.Admin.Controllers
         [Authorize(Roles = SD.Role_Admin +","+SD.Role_Employee)]
         public IActionResult UpdateOrderDetail(OrderVM orderVM)
         {
+            if (orderVM == null || orderVM.OrderHeader == null)
+            {
+                return BadRequest();
+            }
+
             var orderHeaderFromDb = _unitOfWork.OrderHeader.Get(u => u.Id == orderVM.OrderHeader.Id);
             if (orderHeaderFromDb == null)
             {
@@ -77,15 +93,12 @@ namespace BookWeb.Areas.Admin.Controllers
 
 
 
-
-
-
         #region API CALLS
 
         [HttpGet]
         public IActionResult GetAll(string status)
         {
-            IEnumerable<OrderHeader> objOrderHeaders;
+            IEnumerable<OrderHeader> objOrderHeaders = Enumerable.Empty<OrderHeader>();
 
             if (User.IsInRole(SD.Role_Admin) || User.IsInRole(SD.Role_Employee))
             {
@@ -93,8 +106,13 @@ namespace BookWeb.Areas.Admin.Controllers
             }
             else
             {
-                var claimsIdentity = (ClaimsIdentity)User.Identity;
-                var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
+                // safer retrieval of user id
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Json(new { data = objOrderHeaders });
+                }
+
                 objOrderHeaders = _unitOfWork.OrderHeader.GetAll(u => u.ApplicationUserId == userId, includeProperties: "ApplicationUser").ToList();
             }
 
