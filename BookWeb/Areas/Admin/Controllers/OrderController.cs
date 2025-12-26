@@ -5,12 +5,14 @@ using Book.Utility;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Diagnostics;
 using System.Security.Claims;
 
 namespace BookWeb.Areas.Admin.Controllers
 {
     [Area("Admin")]
+    [Authorize]
     public class OrderController : Controller
     {
 
@@ -86,6 +88,66 @@ namespace BookWeb.Areas.Admin.Controllers
 
 
 
+        [HttpPost]
+        [Authorize(Roles = SD.Role_Admin + "," + SD.Role_Employee)]
+        public IActionResult StartProcessing(OrderVM orderVM)
+        {
+            if (orderVM == null || orderVM.OrderHeader == null)
+            {
+                return BadRequest();
+            }
+
+            var id = orderVM.OrderHeader.Id;
+            if (id == 0)
+            {
+                return BadRequest();
+            }
+
+            _unitOfWork.OrderHeader.UpdateStatus(id, SD.StatusInProcess);
+            _unitOfWork.Save();
+            TempData["success"] = "Order Status Updated to In Process.";
+            return RedirectToAction(nameof(Details), new { orderId = id });
+        }
+
+
+        [HttpPost]
+        [Authorize(Roles = SD.Role_Admin + "," + SD.Role_Employee)]
+        public IActionResult ShipOrder(OrderVM orderVM)
+        {
+            if (orderVM == null || orderVM.OrderHeader == null)
+            {
+                return BadRequest();
+            }
+
+            var id = orderVM.OrderHeader.Id;
+            if (id == 0)
+            {
+                return BadRequest();
+            }
+
+            var orderHeader = _unitOfWork.OrderHeader.Get(u => u.Id == id);
+            if (orderHeader == null)
+            {
+                return NotFound();
+            }
+
+            // update tracking and carrier from posted values
+            orderHeader.TrackingNumber = orderVM.OrderHeader.TrackingNumber;
+            orderHeader.Carrier = orderVM.OrderHeader.Carrier;
+            // mark as shipped
+            orderHeader.OrderStatus = SD.StatusShipped;
+            orderHeader.ShippingDate = DateTime.Now;
+
+            if (orderHeader.PaymentStatus == SD.PaymentStatusDelayedPayment)
+            {
+                orderHeader.PaymentDueDate = DateOnly.FromDateTime(DateTime.Now.AddDays(30));
+            }
+
+            _unitOfWork.OrderHeader.Update(orderHeader);
+            _unitOfWork.Save();
+            TempData["success"] = "Order Shipped Successfully";
+            return RedirectToAction(nameof(Details), new { orderId = id });
+        }
 
 
 
