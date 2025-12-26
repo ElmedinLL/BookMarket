@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore.SqlServer.Query.Internal;
 using Stripe;
+using Stripe.Checkout;
 using System.Diagnostics;
 using System.Security.Claims;
 
@@ -201,8 +202,92 @@ namespace BookWeb.Areas.Admin.Controllers
         }
 
 
+        [ActionName("Details")]
+        [HttpPost]
+        [Authorize(Roles = SD.Role_Admin + "," + SD.Role_Employee)]
+        public IActionResult PayNow(OrderVM orderVM)
+        {
+            if (orderVM == null || orderVM.OrderHeader == null)
+            {
+                return BadRequest();
+            }
+
+            var id = orderVM.OrderHeader.Id;
+            if (id == 0)
+            {
+                return BadRequest();
+            }
+
+            // stripe settings - generate absolute URLs based on current request so host/port are correct
+            var successUrl = Url.Action("PaymentConfirmation", "Order", new { area = "Admin", orderHeaderId = id }, Request.Scheme);
+            var cancelUrl = Url.Action("Details", "Order", new { area = "Admin", id = id }, Request.Scheme);
+
+            var options = new SessionCreateOptions
+            {
+                SuccessUrl = successUrl,
+                CancelUrl = cancelUrl,
+                LineItems = new List<SessionLineItemOptions>(),
+                Mode = "payment",
+            };
+
+            var orderDetails = _unitOfWork.OrderDetail.GetAll(u => u.OrderHeaderId == id);
+            foreach (var item in orderDetails)
+            {
+                var sessionLineItem = new SessionLineItemOptions
+                {
+                    PriceData = new SessionLineItemPriceDataOptions
+                    {
+                        UnitAmount = (long)(item.Price * 100), // in cents
+                        Currency = "usd",
+                        ProductData = new SessionLineItemPriceDataProductDataOptions
+                        {
+                            Name = item.Product?.Title ?? "Product"
+                        },
+                    },
+                    Quantity = item.Count,
+                };
+                options.LineItems.Add(sessionLineItem);
+            }
+
+            var service = new SessionService();
+            var session = service.Create(options);
+
+            // persist session info using repository helper
+            _unitOfWork.OrderHeader.UpdateStripePaymentId(id, session.Id, session.PaymentIntentId);
+            _unitOfWork.Save();
+
+            Response.Headers.Add("Location", session.Url);
+            return new StatusCodeResult(303);
+        }
 
 
+        public IActionResult PaymentConfirmation(int orderHeaderId)
+        {
+            var orderHeader = _unitOfWork.OrderHeader.Get(u => u.Id == orderHeaderId);
+            if (orderHeader == null)
+            {
+                return NotFound();
+            }
+
+            // Only check Stripe session when payment status is not already approved
+            if (orderHeader.PaymentStatus != SD.PaymentStatusApproved)
+            {
+                if (!string.IsNullOrEmpty(orderHeader.SessionId))
+                {
+                    var service = new SessionService();
+                    var session = service.Get(orderHeader.SessionId);
+                    if (session != null && string.Equals(session.PaymentStatus, "paid", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // update stripe ids and mark payment approved
+                        _unitOfWork.OrderHeader.UpdateStripePaymentId(orderHeaderId, session.Id, session.PaymentIntentId);
+                        _unitOfWork.OrderHeader.UpdateStatus(orderHeaderId, SD.StatusApproved, SD.PaymentStatusApproved);
+                        _unitOfWork.Save();
+                    }
+                }
+            }
+
+            return View(orderHeaderId);
+        }
 
         #region API CALLS
 
