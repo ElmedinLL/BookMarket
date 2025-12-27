@@ -52,8 +52,8 @@ namespace Book.DataAccess.DbInitializer
 
                 _userManager.CreateAsync(new ApplicationUser
                 {
-                    UserName = "adminElmedin",
-                    Email = "admin@bookmarket.com",
+                    UserName = "admin1@bookmarket.com",
+                    Email = "admin1@bookmarket.com",
                     Name = "Elmedin Llumnica",
                     PhoneNumber = "111-222-3333",
                     StreetAddress = "123 Main St",
@@ -61,11 +61,11 @@ namespace Book.DataAccess.DbInitializer
                     State = "UK",
                     PostalCode = "LS1 2AB"
 
-                }, "Admin123*").GetAwaiter().GetResult();
+                }, "Admin1234*").GetAwaiter().GetResult();
 
                 //  assign admin user to admin role
 
-                ApplicationUser user = _db.ApplicationUsers.FirstOrDefault(u => u.Email == "admin@bookmarket.com");
+                ApplicationUser user = _db.ApplicationUsers.FirstOrDefault(u => u.Email == "admin1@bookmarket.com");
                 _userManager.AddToRoleAsync(user, SD.Role_Admin).GetAwaiter().GetResult();
 
             }
