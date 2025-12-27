@@ -15,10 +15,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddControllersWithViews();
-builder.Services.AddDbContext<ApplicationDBContext>
-    (options => options.UseSqlServer
-    (builder.Configuration.GetConnectionString
-    ("DefaultConnection")));
+//builder.Services.AddDbContext<ApplicationDBContext>
+//    (options => options.UseSqlServer
+//    (builder.Configuration.GetConnectionString
+//    ("DefaultConnection")));
 
 builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("Stripe"));
 
@@ -40,7 +40,7 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-builder.Services.AddScoped<IDbInitializer, DbInitializer>();
+//builder.Services.AddScoped<IDbInitializer, DbInitializer>();
 builder.Services.AddScoped<IUnitOfWork,UnitOfWork>();
 builder.Services.AddScoped<IEmailSender, EmailSender>();
 builder.Services.AddAuthentication().AddFacebook(option =>
