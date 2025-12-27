@@ -41,6 +41,11 @@ builder.Services.AddSession(options =>
 
 builder.Services.AddScoped<IUnitOfWork,UnitOfWork>();
 builder.Services.AddScoped<IEmailSender, EmailSender>();
+builder.Services.AddAuthentication().AddFacebook(option =>
+{
+    option.AppId = "1511167560520492";
+    option.AppSecret = "ab72a34d8c75bc0eb4f81d9310ab8874";
+});
 
 var app = builder.Build();
 
