@@ -4,20 +4,17 @@ using BookMarket.DataAccess.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Book.DataAccess.DbInitializer
 {
     public class DbInitializer : IDbInitializer
     {
-
         private readonly ApplicationDBContext _db;
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
-        public DbInitializer(ApplicationDBContext db, UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager)
+
+        public DbInitializer(ApplicationDBContext db, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
         {
             _db = db;
             _userManager = userManager;
@@ -26,31 +23,28 @@ namespace Book.DataAccess.DbInitializer
 
         public void Initialize()
         {
-
-            //migrate if they are not applied
             try
             {
-                if (_db.Database.GetPendingMigrations().Count() > 0)
+                if (_db.Database.GetPendingMigrations().Any())
                 {
                     _db.Database.Migrate();
                 }
-            }catch (Exception ex)
+            }
+            catch (Exception ex)
             {
+                // Replace with ILogger when available
+                Console.WriteLine($"Database migration failed: {ex.Message}");
             }
 
-            // create roles if they are not created
-
-            if (!_roleManager.RoleExistsAsync(SD.Role_Customer).GetAwaiter().GetResult())
+            // Create roles and default admin user if roles are not present
+            if (!_roleManager.RoleExistsAsync(SD.Role_Admin).GetAwaiter().GetResult())
             {
                 _roleManager.CreateAsync(new IdentityRole(SD.Role_Customer)).GetAwaiter().GetResult();
                 _roleManager.CreateAsync(new IdentityRole(SD.Role_Employee)).GetAwaiter().GetResult();
                 _roleManager.CreateAsync(new IdentityRole(SD.Role_Admin)).GetAwaiter().GetResult();
                 _roleManager.CreateAsync(new IdentityRole(SD.Role_Company)).GetAwaiter().GetResult();
 
-
-                // if the roles are not created, then we will create admin user as well
-
-                _userManager.CreateAsync(new ApplicationUser
+                var adminUser = new ApplicationUser
                 {
                     UserName = "admin1@bookmarket.com",
                     Email = "admin1@bookmarket.com",
@@ -60,17 +54,18 @@ namespace Book.DataAccess.DbInitializer
                     City = "London",
                     State = "UK",
                     PostalCode = "LS1 2AB"
+                };
 
-                }, "Admin1234*").GetAwaiter().GetResult();
+                _userManager.CreateAsync(adminUser, "Admin1234*").GetAwaiter().GetResult();
 
-                //  assign admin user to admin role
-
-                ApplicationUser user = _db.ApplicationUsers.FirstOrDefault(u => u.Email == "admin1@bookmarket.com");
-                _userManager.AddToRoleAsync(user, SD.Role_Admin).GetAwaiter().GetResult();
-
+                var user = _db.ApplicationUsers.FirstOrDefault(u => u.Email == "admin1@bookmarket.com");
+                if (user != null)
+                {
+                    _userManager.AddToRoleAsync(user, SD.Role_Admin).GetAwaiter().GetResult();
+                }
             }
 
-           return;
+            return;
         }
     }
 }
