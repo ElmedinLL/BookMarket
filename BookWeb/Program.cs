@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Book.Utility;
 using Stripe;
 using Book.DataAccess.DbInitializer;
+using Book.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
@@ -22,9 +23,11 @@ builder.Services.AddDbContext<ApplicationDBContext>
 
 builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("Stripe"));
 
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+    .AddEntityFrameworkStores<ApplicationDBContext>()
+    .AddDefaultTokenProviders();
 
-builder.Services.AddIdentity<IdentityUser,IdentityRole>().AddEntityFrameworkStores<ApplicationDBContext>().AddDefaultTokenProviders();
-//Cannot add Cookies before AddIdentity
+// Cannot add Cookies before AddIdentity
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = $"/Identity/Account/Login";
@@ -41,7 +44,7 @@ builder.Services.AddSession(options =>
 });
 
 builder.Services.AddScoped<IDbInitializer, DbInitializer>();
-builder.Services.AddScoped<IUnitOfWork,UnitOfWork>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IEmailSender, EmailSender>();
 builder.Services.AddAuthentication().AddFacebook(option =>
 {
@@ -75,7 +78,6 @@ app.MapControllerRoute(
     pattern: "{area=Customer}/{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
-
 
 // Seed Database
 void SeedDatabase()
